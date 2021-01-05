@@ -1,6 +1,6 @@
 {
 	"name": "cebe/php-openapi",
-	"description": "READ OpenAPI yaml files and make the content accessable in PHP objects.",
+	"description": "Read and write OpenAPI yaml/json files and make the content accessable in PHP objects.",
 	"keywords": ["openapi"],
 	"homepage": "https://github.com/cebe/php-openapi#readme",
 	"type": "library",
@@ -25,10 +25,9 @@
 	},
 	"require-dev": {
 		"cebe/indent": "*",
-		"friendsofphp/php-cs-fixer": "~2.16.1",
-		"phpunit/phpunit": "^6.5",
+		"phpunit/phpunit": "^6.5 || ^7.5 || ^8.5 || ^9.4",
 
-		"oai/openapi-specification": "3.0.2",
+		"oai/openapi-specification": "3.0.3",
 		"mermade/openapi3-examples": "1.0.0",
 		"apis-guru/openapi-directory": "1.0.0",
 		"nexmo/api-specification": "1.0.0",
@@ -41,7 +40,7 @@
 	},
 	"extra": {
 		"branch-alias": {
-			"dev-master": "1.4.x-dev"
+			"dev-master": "1.5.x-dev"
 		}
 	},
 	"bin": [
@@ -52,11 +51,11 @@
 			"type": "package",
 			"package": {
 				"name": "oai/openapi-specification",
-				"version": "3.0.2",
+				"version": "3.0.3",
 				"source": {
 					"url": "https://github.com/OAI/OpenAPI-Specification",
 					"type": "git",
-					"reference": "3.0.2"
+					"reference": "3.0.3"
 				}
 			}
 		},
@@ -92,7 +91,7 @@
 				"source": {
 					"url": "https://github.com/Nexmo/api-specification",
 					"type": "git",
-					"reference": "master"
+					"reference": "voice-2.0.0"
 				}
 			}
 		}

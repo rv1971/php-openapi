@@ -136,14 +136,20 @@ YAML
         $this->assertSame($openapi->components->examples['frog-example'], $refExample);
     }
 
+    private function createFileUri($file)
+    {
+        if (stripos(PHP_OS, 'WIN') === 0) {
+            return 'file:///' . strtr($file, [' ' => '%20', '\\' => '/']);
+        } else {
+            return 'file://' . $file;
+        }
+    }
+
     public function testResolveFile()
     {
         $file = __DIR__ . '/data/reference/base.yaml';
-        if (stripos(PHP_OS, 'WIN') === 0) {
-            $yaml = str_replace('##ABSOLUTEPATH##', 'file:///' . strtr(dirname($file), [' ' => '%20', '\\' => '/']), file_get_contents($file));
-        } else {
-            $yaml = str_replace('##ABSOLUTEPATH##', 'file://' . dirname($file), file_get_contents($file));
-        }
+        $yaml = str_replace('##ABSOLUTEPATH##', $this->createFileUri(dirname($file)), file_get_contents($file));
+
         /** @var $openapi OpenApi */
         $openapi = Reader::readFromYaml($yaml);
 
@@ -295,7 +301,7 @@ components:
 
 YAML;
         $openapi = Reader::readFromYaml($schema);
-        $openapi->resolveReferences(new \cebe\openapi\ReferenceContext($openapi, 'file://' . __DIR__ . '/data/reference/definitions.yaml'));
+        $openapi->resolveReferences(new \cebe\openapi\ReferenceContext($openapi, $this->createFileUri(__DIR__ . '/data/reference/definitions.yaml')));
 
         $this->assertTrue(isset($openapi->components->schemas['Pet']));
         $this->assertEquals(['One', 'Two'], $openapi->components->schemas['Pet']->properties['typeA']->enum);
@@ -376,7 +382,7 @@ components:
 YAML;
 
         $openapi = Reader::readFromYaml($schema);
-        $openapi->resolveReferences(new \cebe\openapi\ReferenceContext($openapi, 'file://' . __DIR__ . '/data/reference/definitions.yaml'));
+        $openapi->resolveReferences(new \cebe\openapi\ReferenceContext($openapi, $this->createFileUri(__DIR__ . '/data/reference/definitions.yaml')));
 
         $this->assertTrue(isset($openapi->components->schemas['Dog']));
         $this->assertEquals('object', $openapi->components->schemas['Dog']->type);
@@ -416,4 +422,163 @@ YAML;
 
         $openapi->resolveReferences(new \cebe\openapi\ReferenceContext($openapi, 'file:///tmp/openapi.yaml'));
     }
+
+    public function testTransitiveReferenceOverTwoFiles()
+    {
+        $openapi = Reader::readFromYamlFile(__DIR__ . '/data/reference/structure.yaml', OpenApi::class, \cebe\openapi\ReferenceContext::RESOLVE_MODE_INLINE);
+
+        $yaml = \cebe\openapi\Writer::writeToYaml($openapi);
+
+        $expected = <<<YAML
+openapi: 3.0.0
+info:
+  title: 'Ref Example'
+  version: 1.0.0
+paths:
+  /pet:
+    get:
+      responses:
+        '200':
+          description: 'return a pet'
+  /cat:
+    get:
+      responses:
+        '200':
+          description: 'return a cat'
+
+YAML;
+        // remove line endings to make string equal on windows
+        $expected = preg_replace('~\R~', "\n", $expected);
+        if (PHP_VERSION_ID < 70200) {
+            // PHP <7.2 returns numeric properties in yaml maps as integer, since 7.2 these are string
+            // probably related to https://www.php.net/manual/de/migration72.incompatible.php#migration72.incompatible.object-array-casts
+            $this->assertEquals(str_replace("'200':", "200:", $expected), $yaml, $yaml);
+        } else {
+            $this->assertEquals($expected, $yaml, $yaml);
+        }
+    }
+
+    public function testResolveRelativePathInline()
+    {
+        $openapi = Reader::readFromYamlFile(__DIR__ . '/data/reference/openapi_models.yaml', OpenApi::class, \cebe\openapi\ReferenceContext::RESOLVE_MODE_INLINE);
+
+        $yaml = \cebe\openapi\Writer::writeToYaml($openapi);
+
+        $expected = <<<YAML
+openapi: 3.0.3
+info:
+  title: 'Link Example'
+  version: 1.0.0
+paths:
+  /pet:
+    get:
+      responses:
+        '200':
+          description: 'return a pet'
+components:
+  schemas:
+    Pet:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        cat:
+          \$ref: '#/components/schemas/Cat'
+      description: 'A Pet'
+    Cat:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+          description: 'the cats name'
+        pet:
+          \$ref: '#/components/schemas/Pet'
+      description: 'A Cat'
+
+YAML;
+        // remove line endings to make string equal on windows
+        $expected = preg_replace('~\R~', "\n", $expected);
+        if (PHP_VERSION_ID < 70200) {
+            // PHP <7.2 returns numeric properties in yaml maps as integer, since 7.2 these are string
+            // probably related to https://www.php.net/manual/de/migration72.incompatible.php#migration72.incompatible.object-array-casts
+            $this->assertEquals(str_replace("'200':", "200:", $expected), $yaml, $yaml);
+        } else {
+            $this->assertEquals($expected, $yaml, $yaml);
+        }
+    }
+
+    public function testResolveRelativePathAll()
+    {
+        $openapi = Reader::readFromYamlFile(__DIR__ . '/data/reference/openapi_models.yaml', OpenApi::class, \cebe\openapi\ReferenceContext::RESOLVE_MODE_ALL);
+
+        $yaml = \cebe\openapi\Writer::writeToYaml($openapi);
+
+        $expected = <<<YAML
+openapi: 3.0.3
+info:
+  title: 'Link Example'
+  version: 1.0.0
+paths:
+  /pet:
+    get:
+      responses:
+        '200':
+          description: 'return a pet'
+components:
+  schemas:
+    Pet:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        cat:
+          type: object
+          properties:
+            id:
+              type: integer
+              format: int64
+            name:
+              type: string
+              description: 'the cats name'
+            pet:
+              \$ref: '#/components/schemas/Pet'
+          description: 'A Cat'
+      description: 'A Pet'
+    Cat:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+          description: 'the cats name'
+        pet:
+          type: object
+          properties:
+            id:
+              type: integer
+              format: int64
+            cat:
+              \$ref: '#/components/schemas/Cat'
+          description: 'A Pet'
+      description: 'A Cat'
+
+YAML;
+        // remove line endings to make string equal on windows
+        $expected = preg_replace('~\R~', "\n", $expected);
+        if (PHP_VERSION_ID < 70200) {
+            // PHP <7.2 returns numeric properties in yaml maps as integer, since 7.2 these are string
+            // probably related to https://www.php.net/manual/de/migration72.incompatible.php#migration72.incompatible.object-array-casts
+            $this->assertEquals(str_replace("'200':", "200:", $expected), $yaml, $yaml);
+        } else {
+            $this->assertEquals($expected, $yaml, $yaml);
+        }
+    }
+
 }

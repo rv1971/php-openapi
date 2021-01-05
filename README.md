@@ -6,7 +6,7 @@ It also provides a CLI tool for validating and converting OpenAPI 3.0.x Descript
 
 [![Latest Stable Version](https://poser.pugx.org/cebe/php-openapi/v/stable)](https://packagist.org/packages/cebe/php-openapi)
 [![Total Downloads](https://poser.pugx.org/cebe/php-openapi/downloads)](https://packagist.org/packages/cebe/php-openapi)
-[![Build Status](https://travis-ci.org/cebe/php-openapi.svg?branch=master)](https://travis-ci.org/cebe/php-openapi)
+[![Build Status](https://github.com/cebe/php-openapi/workflows/PHP%20Composer/badge.svg)](https://github.com/cebe/php-openapi/actions)
 [![License](https://poser.pugx.org/cebe/php-openapi/license)](https://packagist.org/packages/cebe/php-openapi)
 
 
@@ -16,7 +16,7 @@ It also provides a CLI tool for validating and converting OpenAPI 3.0.x Descript
 
 ## Requirements
 
-- PHP 7.1 or higher
+- PHP 7.1 or higher (works fine with PHP 8)
 
 ## Used by
 
@@ -55,13 +55,25 @@ do awesome work:
                    Exits with code 2 on validation errors, 1 on other errors and 0 on success.
 
         convert    Convert a JSON or YAML input file to JSON or YAML output file.
-                   References are being resolved so the output will be a single API Description file.
 
                    If no input file is specified input will be read from STDIN.
                    If no output file is specified output will be written to STDOUT.
                    The tool will try to auto-detect the content type of the input and output file, but may fail
                    to do so, you may specify --read-yaml or --read-json to force the input file type.
                    and --write-yaml or --write-json to force the output file type.
+
+                   By default all references are resolved (replaced with the object refered to). You can control
+                   handling of references with the following arguments:
+
+                   --resolve-none      Do not resolve references.
+                   --resolve-external  Only resolve references that point to external files.
+                                       This process is often referred to as "inlining".
+                   --resolve-all       Resolve all references (default).
+                                       Recursive pointers will stay references.
+
+        inline     Convert a JSON or YAML input file to JSON or YAML output file and
+                   resolve all external references. The output will be a single API Description file.
+                   This is a shortcut for calling convert --resolve-external.
 
         help       Shows this usage information.
 
@@ -71,6 +83,7 @@ do awesome work:
         --read-yaml   force reading input as YAML. Auto-detect if not specified.
         --write-json  force writing output as JSON. Auto-detect if not specified.
         --write-yaml  force writing output as YAML. Auto-detect if not specified.
+        -s, --silent  silent mode. Will hide all success/information messages and only print errors.
 
 
 ### Reading API Description Files
