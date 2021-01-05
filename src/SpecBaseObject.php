@@ -140,7 +140,17 @@ abstract class SpecBaseObject implements SpecObjectInterface, DocumentContextInt
             unset($data[$property]);
         }
         foreach ($data as $additionalProperty => $value) {
-            $this->_properties[$additionalProperty] = $value;
+          /**
+           * @author rv1971
+           *
+           * Discard `$schema` properties. This allows to use existing JSON
+           * Schema files from other sources unchanged.
+           */
+          if ( $additionalProperty == '$schema' ) {
+            continue;
+          }
+
+          $this->_properties[$additionalProperty] = $value;
         }
     }
 
