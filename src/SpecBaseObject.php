@@ -7,6 +7,7 @@
 
 namespace cebe\openapi;
 
+use cebe\openapi\exceptions\IOException;
 use cebe\openapi\exceptions\TypeErrorException;
 use cebe\openapi\exceptions\UnknownPropertyException;
 use cebe\openapi\json\JsonPointer;
@@ -404,7 +405,13 @@ abstract class SpecBaseObject implements SpecObjectInterface, DocumentContextInt
         if ($this->_recursingReferences) {
             return;
         }
+
         $this->_recursingReferences = true;
+
+        if (isset($context)
+            && $context->mode == ReferenceContext::RESOLVE_MODE_ALL) {
+            $this->resolveExternalValues($context);
+        }
 
         foreach ($this->_properties as $property => $value) {
             if ($value instanceof Reference) {
@@ -431,6 +438,17 @@ abstract class SpecBaseObject implements SpecObjectInterface, DocumentContextInt
         }
 
         $this->_recursingReferences = false;
+    }
+
+    public function resolveExternalValues(ReferenceContext $context = null)
+    {
+        foreach ($this->_properties as $property => $value) {
+            if ($property == 'externalValue') {
+                unset($this->_properties['externalValue']);
+                $this->_properties['value'] =
+                    $context->fetchReferencedFile($value);
+            }
+        }
     }
 
     /**
