@@ -10,6 +10,7 @@ namespace cebe\openapi;
 use cebe\openapi\exceptions\IOException;
 use cebe\openapi\exceptions\TypeErrorException;
 use cebe\openapi\exceptions\UnresolvableReferenceException;
+use cebe\openapi\json\InvalidJsonPointerSyntaxException;
 use cebe\openapi\json\JsonPointer;
 use cebe\openapi\spec\OpenApi;
 use Symfony\Component\Yaml\Yaml;
@@ -22,6 +23,9 @@ class Reader
 {
     /**
      * Populate OpenAPI spec object from JSON data.
+     * @phpstan-template T of SpecObjectInterface
+     * @phpstan-param class-string<T> $baseType
+     * @phpstan-return T
      * @param string $json the JSON string to decode.
      * @param string $baseType the base Type to instantiate. This must be an instance of [[SpecObjectInterface]].
      * The default is [[OpenApi]] which is the base type of a OpenAPI specification file.
@@ -37,6 +41,9 @@ class Reader
 
     /**
      * Populate OpenAPI spec object from YAML data.
+     * @phpstan-template T of SpecObjectInterface
+     * @phpstan-param class-string<T> $baseType
+     * @phpstan-return T
      * @param string $yaml the YAML string to decode.
      * @param string $baseType the base Type to instantiate. This must be an instance of [[SpecObjectInterface]].
      * The default is [[OpenApi]] which is the base type of a OpenAPI specification file.
@@ -52,6 +59,9 @@ class Reader
 
     /**
      * Populate OpenAPI spec object from a JSON file.
+     * @phpstan-template T of SpecObjectInterface
+     * @phpstan-param class-string<T> $baseType
+     * @phpstan-return T
      * @param string $fileName the file name of the file to be read.
      * If `$resolveReferences` is true (the default), this should be an absolute URL, a `file://` URI or
      * an absolute path to allow resolving relative path references.
@@ -69,6 +79,7 @@ class Reader
      * @throws TypeErrorException in case invalid spec data is supplied.
      * @throws UnresolvableReferenceException in case references could not be resolved.
      * @throws IOException when the file is not readable.
+     * @throws InvalidJsonPointerSyntaxException in case an invalid JSON pointer string is passed to the spec references.
      */
     public static function readFromJsonFile(string $fileName, string $baseType = OpenApi::class, $resolveReferences = true): SpecObjectInterface
     {
@@ -95,6 +106,9 @@ class Reader
 
     /**
      * Populate OpenAPI spec object from YAML file.
+     * @phpstan-template T of SpecObjectInterface
+     * @phpstan-param class-string<T> $baseType
+     * @phpstan-return T
      * @param string $fileName the file name of the file to be read.
      * If `$resolveReferences` is true (the default), this should be an absolute URL, a `file://` URI or
      * an absolute path to allow resolving relative path references.
